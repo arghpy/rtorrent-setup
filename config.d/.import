@@ -1,0 +1,2 @@
+import=/HOME/rtorrent/config.d/add_and_move.rc
+import=/HOME/rtorrent/config.d/default_dht_tracker.rc

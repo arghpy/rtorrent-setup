@@ -1,0 +1,9 @@
+## Default tracker
+method.insert = d.add_tracker, simple|private, "d.tracker.insert=\"10\", \"udp://tracker.opentrackr.org:1337/announce\""
+## Default DHT node
+method.insert = d.add_node, simple|private, "dht.add_node=dht.libtorrent.org:25401"
+
+## Add default tracker to new torrents
+method.set_key = event.download.inserted_new, tracker_insert, ((d.add_tracker))
+## Schedule addition of default dht node
+schedule2 = dht_add_node, 15, 0, ((d.add_node))

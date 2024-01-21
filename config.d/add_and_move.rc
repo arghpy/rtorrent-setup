@@ -1,0 +1,13 @@
+## This scripts defines the watch directories
+## and upon download completion is moves the
+## files to the specified directory based on 
+## watch name
+
+schedule2 = watch_movies,10,10,"load.start_verbose=~/rtorrent/watch/movies/*.torrent,d.custom1.set=~/Downloads/movies/"
+schedule2 = watch_iso,10,10,"load.start_verbose=~/rtorrent/watch/iso/*.torrent,d.custom1.set=~/Downloads/iso/"
+
+method.insert = d.move_to_complete, simple, "d.directory.set=$argument.1=; execute2=mkdir,-p,$argument.1=; execute2=mv,-u,$argument.0=,$argument.1=; d.save_full_session="
+method.set_key = event.download.finished,move_complete,"d.move_to_complete=$d.data_path=,$d.custom1="
+
+## Send message to ryzen that it is done
+method.set_key = event.download.finished,notify_me,"execute2=~/rtorrent/send_notification.sh,$d.name="

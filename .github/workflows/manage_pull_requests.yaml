@@ -1,0 +1,68 @@
+name: "Manage Pull Requests"
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+      - labeled
+      - unlabeled
+  pull_request_review:
+    types:
+      - submitted
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: write
+
+jobs:
+
+  lint_files:
+    name: Lint Files
+    uses: arghpy/shared-workflows/.github/workflows/lint.yaml@main
+    secrets: inherit
+    with:
+      runner: ${{ vars.RUNNER }}
+
+  get_pr_status:
+    name: Get PR Status
+    runs-on: ${{ vars.RUNNER }}
+    outputs:
+      pr_status: ${{ steps.pr_status.outputs.pr_status }}
+
+    steps:
+      - name: Assess PR Status
+        id: pr_status
+        run: |
+          pr_status=false
+          if [[ "${{ github.event.review.state }}" == "approved" ]] &&\
+              [[ "${{ github.event.pull_request.draft }}" == "false" ]] ||\
+              [[ "${{ contains(github.event.*.labels.*.name, 'merge') }}" == "true" ]]; then
+            pr_status=true
+          fi
+          echo "pr_status=${pr_status}" >> "$GITHUB_OUTPUT"
+
+  auto_merge:
+    name: Auto Merge
+    runs-on: ${{ vars.RUNNER }}
+    needs: [lint_files, get_pr_status]
+    if: |
+      always() &&
+      needs.get_pr_status.result == 'success' &&
+      needs.get_pr_status.outputs.pr_status == 'true' &&
+      needs.lint_files.result == 'success'
+
+    steps:
+      - name: Auto-merge
+        id: auto_merge
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.pulls.merge({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
